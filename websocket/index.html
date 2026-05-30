@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>WS echo</title></head>
+<body>
+  <h1>WebSocket echo</h1>
+  <input id="msg" placeholder="type a message" autofocus>
+  <button id="send">Send</button>
+  <ul id="log"></ul>
+
+  <script>
+    // 1) Open the connection. This fires the SAME upgrade handshake your Go
+    //    server's websocket.Accept is waiting for.
+    const ws = new WebSocket("ws://" + location.host + "/ws");
+
+    const log = (text) => {
+      const li = document.createElement("li");
+      li.textContent = text;
+      document.getElementById("log").appendChild(li);
+    };
+
+    // 2) Event handlers — a WebSocket is event-driven, not request/response.
+    ws.onopen    = () => log("[connected]");
+    ws.onmessage = (e) => log("server: " + e.data); // every c.Write on the server lands here
+    ws.onclose   = () => log("[disconnected]");
+
+    // 3) Sending = ws.send(...). This becomes one Read() on the server side.
+    const send = () => {
+      const input = document.getElementById("msg");
+      if (!input.value) return;
+      ws.send(input.value);   // -> server Read -> server Write -> our onmessage
+      input.value = "";
+    };
+    document.getElementById("send").onclick = send;
+    document.getElementById("msg").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") send();
+    });
+  </script>
+</body>
+</html>
